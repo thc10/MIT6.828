@@ -25,9 +25,11 @@ start:
   #   For backwards compatibility with the earliest PCs, physical
   #   address line 20 is tied low, so that addresses higher than
   #   1MB wrap around to zero by default.  This code undoes this.
+  #   默认情况下A20是置0的，这使得PC只能访问1M,3M,5M这样的奇数段
+  #   所以在进入保护模式前要先打开A20来获得完全的寻址能力
 seta20.1:
   inb     $0x64,%al               # Wait for not busy
-  testb   $0x2,%al
+  testb   $0x2,%al		  # if bit1 = 1, buffer is full
   jnz     seta20.1
 
   movb    $0xd1,%al               # 0xd1 -> port 0x64
@@ -39,15 +41,15 @@ seta20.2:
   jnz     seta20.2
 
   movb    $0xdf,%al               # 0xdf -> port 0x60
-  outb    %al,$0x60
+  outb    %al,$0x60		  # 打开A20
 
   # Switch from real to protected mode, using a bootstrap GDT
   # and segment translation that makes virtual addresses 
   # identical to their physical addresses, so that the 
   # effective memory map does not change during the switch.
-  lgdt    gdtdesc
-  movl    %cr0, %eax
-  orl     $CR0_PE_ON, %eax
+  lgdt    gdtdesc		  # 设置全局描述符表
+  movl    %cr0, %eax		  # 设置控制寄存器0
+  orl     $CR0_PE_ON, %eax	  # 将允许保护模式位置置1
   movl    %eax, %cr0
   
   # Jump to next instruction, but in 32-bit code segment.

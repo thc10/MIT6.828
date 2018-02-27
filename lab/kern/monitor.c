@@ -51,6 +51,7 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 	cprintf("  end    %08x (virt)  %08x (phys)\n", end, end - KERNBASE);
 	cprintf("Kernel executable memory footprint: %dKB\n",
 		ROUNDUP(end - entry, 1024) / 1024);
+	cprintf("\n here is test of printf o:\n 10 = 0%o\n 50 = 0%o\n", 10, 50);
 	return 0;
 }
 

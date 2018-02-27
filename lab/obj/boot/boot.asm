@@ -26,14 +26,14 @@ start:
     7c08:	8e d0                	mov    %eax,%ss
 
 00007c0a <seta20.1>:
-  # Enable A20:
-  #   For backwards compatibility with the earliest PCs, physical
   #   address line 20 is tied low, so that addresses higher than
   #   1MB wrap around to zero by default.  This code undoes this.
+  #   默认情况下A20是置0的，这使得PC只能访问1M,3M,5M这样的奇数段
+  #   所以在进入保护模式前要先打开A20来获得完全的寻址能力
 seta20.1:
   inb     $0x64,%al               # Wait for not busy
     7c0a:	e4 64                	in     $0x64,%al
-  testb   $0x2,%al
+  testb   $0x2,%al		  # if bit1 = 1, buffer is full
     7c0c:	a8 02                	test   $0x2,%al
   jnz     seta20.1
     7c0e:	75 fa                	jne    7c0a <seta20.1>
@@ -55,20 +55,20 @@ seta20.2:
 
   movb    $0xdf,%al               # 0xdf -> port 0x60
     7c1a:	b0 df                	mov    $0xdf,%al
-  outb    %al,$0x60
+  outb    %al,$0x60		  # 打开A20
     7c1c:	e6 60                	out    %al,$0x60
 
   # Switch from real to protected mode, using a bootstrap GDT
   # and segment translation that makes virtual addresses 
   # identical to their physical addresses, so that the 
   # effective memory map does not change during the switch.
-  lgdt    gdtdesc
+  lgdt    gdtdesc		  # 设置全局描述符表
     7c1e:	0f 01 16             	lgdtl  (%esi)
     7c21:	64                   	fs
     7c22:	7c 0f                	jl     7c33 <protcseg+0x1>
-  movl    %cr0, %eax
+  movl    %cr0, %eax		  # 设置控制寄存器0
     7c24:	20 c0                	and    %al,%al
-  orl     $CR0_PE_ON, %eax
+  orl     $CR0_PE_ON, %eax	  # 将允许保护模式位置置1
     7c26:	66 83 c8 01          	or     $0x1,%ax
   movl    %eax, %cr0
     7c2a:	0f 22 c0             	mov    %eax,%cr0
@@ -233,6 +233,7 @@ readseg(uint32_t pa, uint32_t count, uint32_t offset)
     7cd4:	57                   	push   %edi
 	uint32_t end_pa;
 
+	// 结束的物理地址
 	end_pa = pa + count;
     7cd5:	8b 7d 0c             	mov    0xc(%ebp),%edi
 
@@ -245,32 +246,32 @@ readseg(uint32_t pa, uint32_t count, uint32_t offset)
     7cd9:	8b 75 10             	mov    0x10(%ebp),%esi
     7cdc:	53                   	push   %ebx
     7cdd:	8b 5d 08             	mov    0x8(%ebp),%ebx
-
-	// round down to sector boundary
+	// round down to sector boundary 对齐到扇区
 	pa &= ~(SECTSIZE - 1);
 
-	// translate from bytes to sectors, and kernel starts at sector 1
+	// translate from bytes to sectors, and kernel starts at sector 1 
+	// 计算扇区个数（从1号扇区开始，0号扇区是引导扇区）
 	offset = (offset / SECTSIZE) + 1;
     7ce0:	c1 ee 09             	shr    $0x9,%esi
-void
 readseg(uint32_t pa, uint32_t count, uint32_t offset)
 {
 	uint32_t end_pa;
 
+	// 结束的物理地址
 	end_pa = pa + count;
     7ce3:	01 df                	add    %ebx,%edi
-
-	// round down to sector boundary
+	// round down to sector boundary 对齐到扇区
 	pa &= ~(SECTSIZE - 1);
 
-	// translate from bytes to sectors, and kernel starts at sector 1
+	// translate from bytes to sectors, and kernel starts at sector 1 
+	// 计算扇区个数（从1号扇区开始，0号扇区是引导扇区）
 	offset = (offset / SECTSIZE) + 1;
     7ce5:	46                   	inc    %esi
-	uint32_t end_pa;
 
+	// 结束的物理地址
 	end_pa = pa + count;
 
-	// round down to sector boundary
+	// round down to sector boundary 对齐到扇区
 	pa &= ~(SECTSIZE - 1);
     7ce6:	81 e3 00 fe ff ff    	and    $0xfffffe00,%ebx
 	offset = (offset / SECTSIZE) + 1;
@@ -333,14 +334,14 @@ bootmain(void)
     7d0e:	53                   	push   %ebx
 	struct Proghdr *ph, *eph;
 
-	// read 1st page off disk
+	// read 1st page off disk，从磁盘中读取第一页
 	readseg((uint32_t) ELFHDR, SECTSIZE*8, 0);
     7d0f:	6a 00                	push   $0x0
     7d11:	68 00 10 00 00       	push   $0x1000
     7d16:	68 00 00 01 00       	push   $0x10000
     7d1b:	e8 b1 ff ff ff       	call   7cd1 <readseg>
 
-	// is this a valid ELF?
+	// is this a valid ELF? 根据读到的信息中的魔数来判断是否有效
 	if (ELFHDR->e_magic != ELF_MAGIC)
     7d20:	83 c4 0c             	add    $0xc,%esp
     7d23:	81 3d 00 00 01 00 7f 	cmpl   $0x464c457f,0x10000
@@ -349,29 +350,31 @@ bootmain(void)
 		goto bad;
 
 	// load each program segment (ignores ph flags)
-	ph = (struct Proghdr *) ((uint8_t *) ELFHDR + ELFHDR->e_phoff);
+	ph = (struct Proghdr *) ((uint8_t *) ELFHDR + ELFHDR->e_phoff);		//程序头部表的起始地址
     7d2f:	a1 1c 00 01 00       	mov    0x1001c,%eax
     7d34:	8d 98 00 00 01 00    	lea    0x10000(%eax),%ebx
-	eph = ph + ELFHDR->e_phnum;
+	eph = ph + ELFHDR->e_phnum;		//程序头部表的终止地址
     7d3a:	0f b7 05 2c 00 01 00 	movzwl 0x1002c,%eax
     7d41:	c1 e0 05             	shl    $0x5,%eax
     7d44:	8d 34 03             	lea    (%ebx,%eax,1),%esi
-	for (; ph < eph; ph++)
+	for (; ph < eph; ph++)		//循环读取各个段
     7d47:	39 f3                	cmp    %esi,%ebx
     7d49:	73 16                	jae    7d61 <bootmain+0x57>
 		// p_pa is the load address of this segment (as well
 		// as the physical address)
+		// p_pa既是段的加载地址，也是物理地址
 		readseg(ph->p_pa, ph->p_memsz, ph->p_offset);
     7d4b:	ff 73 04             	pushl  0x4(%ebx)
 		goto bad;
 
 	// load each program segment (ignores ph flags)
-	ph = (struct Proghdr *) ((uint8_t *) ELFHDR + ELFHDR->e_phoff);
-	eph = ph + ELFHDR->e_phnum;
-	for (; ph < eph; ph++)
+	ph = (struct Proghdr *) ((uint8_t *) ELFHDR + ELFHDR->e_phoff);		//程序头部表的起始地址
+	eph = ph + ELFHDR->e_phnum;		//程序头部表的终止地址
+	for (; ph < eph; ph++)		//循环读取各个段
     7d4e:	83 c3 20             	add    $0x20,%ebx
 		// p_pa is the load address of this segment (as well
 		// as the physical address)
+		// p_pa既是段的加载地址，也是物理地址
 		readseg(ph->p_pa, ph->p_memsz, ph->p_offset);
     7d51:	ff 73 f4             	pushl  -0xc(%ebx)
     7d54:	ff 73 ec             	pushl  -0x14(%ebx)
@@ -379,16 +382,16 @@ bootmain(void)
 		goto bad;
 
 	// load each program segment (ignores ph flags)
-	ph = (struct Proghdr *) ((uint8_t *) ELFHDR + ELFHDR->e_phoff);
-	eph = ph + ELFHDR->e_phnum;
-	for (; ph < eph; ph++)
+	ph = (struct Proghdr *) ((uint8_t *) ELFHDR + ELFHDR->e_phoff);		//程序头部表的起始地址
+	eph = ph + ELFHDR->e_phnum;		//程序头部表的终止地址
+	for (; ph < eph; ph++)		//循环读取各个段
     7d5c:	83 c4 0c             	add    $0xc,%esp
     7d5f:	eb e6                	jmp    7d47 <bootmain+0x3d>
-		// as the physical address)
 		readseg(ph->p_pa, ph->p_memsz, ph->p_offset);
 
 	// call the entry point from the ELF header
 	// note: does not return!
+	// 从ELF头中调用入口程序
 	((void (*)(void)) (ELFHDR->e_entry))();
     7d61:	ff 15 18 00 01 00    	call   *0x10018
 }
