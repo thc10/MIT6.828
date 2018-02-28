@@ -51,14 +51,25 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 	cprintf("  end    %08x (virt)  %08x (phys)\n", end, end - KERNBASE);
 	cprintf("Kernel executable memory footprint: %dKB\n",
 		ROUNDUP(end - entry, 1024) / 1024);
-	cprintf("\n here is test of printf o:\n 10 = 0%o\n 50 = 0%o\n", 10, 50);
 	return 0;
 }
 
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
-	// Your code here.
+	// 每次压栈的顺序依次是：保存ebx、保存ebp、返回地址eip、五个参数
+	uint32_t eip;
+	uint32_t ebp = read_ebp();
+	cprintf("Stack backtrace:\n");
+	while(ebp != 0){
+		eip = *((uint32_t *)ebp + 1);
+		cprintf("  ebp %08x  eip %08x  args", ebp, eip);
+		for(int i = 2; i < 7; i++){
+			cprintf(" %08x", *((uint32_t*)ebp + i));
+		}
+		cprintf("\n");
+		ebp = *((uint32_t *)ebp);
+	}
 	return 0;
 }
 
