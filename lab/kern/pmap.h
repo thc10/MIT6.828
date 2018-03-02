@@ -8,6 +8,7 @@
 
 #include <inc/memlayout.h>
 #include <inc/assert.h>
+struct Env;
 
 extern char bootstacktop[], bootstack[];
 
@@ -61,6 +62,57 @@ struct PageInfo *page_lookup(pde_t *pgdir, void *va, pte_t **pte_store);
 void	page_decref(struct PageInfo *pp);
 
 void	tlb_invalidate(pde_t *pgdir, void *va);
+
+int	user_mem_check(struct Env *env, const void *va, size_t len, int perm);
+void	user_mem_assert(struct Env *env, const void *va, size_t len, int perm);
+
+static inline int
+str2permision(const char *buf){
+	int perm = 0;
+	while(*buf != '\0'){
+		switch(*buf++){
+			case 'p':
+			case 'P':
+				perm |= PTE_P;
+				break;
+			case 'w':
+			case 'W':
+				perm |= PTE_W;
+				break;
+			case 'u':
+			case 'U':
+				perm |= PTE_U;
+				break;
+			case 't':
+			case 'T':
+				perm |= PTE_PWT;
+				break;
+			case 'c':
+			case 'C':
+				perm |= PTE_PCD;
+				break;
+			case 'a':
+			case 'A':
+				perm |= PTE_A;
+				break;
+			case 'd':
+			case 'D':
+				perm |= PTE_D;
+				break;
+			case 's':
+			case 'S':
+				perm |= PTE_PS;
+				break;
+			case 'g':
+			case 'G':
+				perm |= PTE_G;
+				break;
+			default:
+				break;
+		}
+	}
+	return perm;
+}
 
 static inline physaddr_t
 page2pa(struct PageInfo *pp)
