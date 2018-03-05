@@ -118,7 +118,7 @@ env_init(void)
 	// Set up envs array
 	// LAB 3: Your code here
 	env_free_list = NULL;
-	uint32_t i = NENV - 1;
+	uint32_t i = NENV;
 	while (i > 0){
 		i--;
 		envs[i].env_id = 0;
