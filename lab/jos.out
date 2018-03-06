@@ -14,4 +14,4 @@ Incoming TRAP frame at 0xefffffbc
 Destroyed the only environment - nothing more to do!
 Welcome to the JOS kernel monitor!
 Type 'help' for a list of commands.
-qemu: terminating on signal 15 from pid 17220
+qemu: terminating on signal 15 from pid 10989
