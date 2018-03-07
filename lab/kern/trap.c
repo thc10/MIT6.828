@@ -360,6 +360,35 @@ page_fault_handler(struct Trapframe *tf)
 	//   (the 'tf' variable points at 'curenv->env_tf').
 
 	// LAB 4: Your code here.
+	struct UTrapframe *utf;
+	uintptr_t utf_addr;
+	// tf->tf_esp shoould locate at [UXSTACKTOP - PGSIZE, UXSTACKTOP - 1]
+	if ((tf->tf_esp >= UXSTACKTOP - PGSIZE) && (tf->tf_esp < UXSTACKTOP)){
+		// recursive case, reserve 4-byte space to reset eip/esp
+		utf_addr = tf->tf_esp - sizeof(struct UTrapframe) - 4;
+	}else {
+		// non-recursive case
+		utf_addr = UXSTACKTOP - sizeof(struct UTrapframe);
+	}
+
+	if (curenv->env_pgfault_upcall){
+		// use mem-assert to check enviroment allocate the exception stack,
+		// has been write permission, stack isn't overflow 
+		user_mem_assert(curenv, (void *)utf_addr, sizeof(struct UTrapframe), PTE_U | PTE_W | PTE_P);
+
+		// initial exception stack
+		utf = (struct UTrapframe *)utf_addr;
+		utf->utf_fault_va = fault_va;
+		utf->utf_err = tf->tf_err;
+		utf->utf_regs = tf->tf_regs;
+		utf->utf_eip = tf->tf_eip;
+		utf->utf_eflags = tf->tf_eflags;
+		utf->utf_esp = tf->tf_esp;
+		// run handler
+		tf->tf_eip = (uintptr_t)curenv->env_pgfault_upcall;
+		tf->tf_esp = (uintptr_t)utf;
+		env_run(curenv);
+	}
 
 	// Destroy the environment that caused the fault.
 	cprintf("[%08x] user fault va %08x ip %08x\n",
