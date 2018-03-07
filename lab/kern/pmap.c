@@ -665,7 +665,7 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 	uintptr_t end_addr = ROUNDUP((uintptr_t)va + len, PGSIZE);
 	for (; start_addr < end_addr; start_addr += PGSIZE){
 		pte_t *page_tab = pgdir_walk(env->env_pgdir, (void *)start_addr, 0);
-		if ((*page_tab & (perm | PTE_P)) != (perm | PTE_P)){
+		if (!page_tab || (*page_tab & (perm | PTE_P)) != (perm | PTE_P)){
 			if (start_addr <= (uintptr_t)va){
 				user_mem_check_addr = (uintptr_t)va;
 			}else if (start_addr >= (uintptr_t)va + len){

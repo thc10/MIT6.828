@@ -15,4 +15,4 @@ SMP: CPU 2 starting
 SMP: CPU 3 starting
 [00000000] new env 00001000
 kernel panic on CPU 1 at kern/trap.c:273: assertion failed: !(read_eflags() & FL_IF)
-qemu: terminating on signal 15 from pid 9185
+qemu: terminating on signal 15 from pid 30245

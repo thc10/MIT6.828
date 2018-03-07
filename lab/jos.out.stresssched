@@ -17,4 +17,4 @@ SMP: CPU 3 starting
 kernel panic on CPU 1 at kern/trap.c:273: assertion failed: !(read_eflags() & FL_IF)
 Welcome to the JOS kernel monitor!
 Type 'help' for a list of commands.
-qemu: terminating on signal 15 from pid 8863
+qemu: terminating on signal 15 from pid 29924

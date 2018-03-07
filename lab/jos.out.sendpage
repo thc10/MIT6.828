@@ -12,7 +12,8 @@ SMP: CPU 0 found 2 CPU(s)
 enabled interrupts: 1 2
 SMP: CPU 1 starting
 [00000000] new env 00001000
-[00001000] user panic in <unknown> at lib/fork.c:81: fork not implementedkernel panic on CPU 1 at kern/trap.c:273: assertion failed: !(read_eflags() & FL_IF)
+[00001000] new env 00001001
+kernel panic on CPU 1 at kern/trap.c:273: assertion failed: !(read_eflags() & FL_IF)
 Welcome to the JOS kernel monitor!
 Type 'help' for a list of commands.
-qemu: terminating on signal 15 from pid 8979
+qemu: terminating on signal 15 from pid 30035

@@ -12,25 +12,14 @@ SMP: CPU 0 found 1 CPU(s)
 enabled interrupts: 1 2
 [00000000] new env 00001000
 I am the parent.  Forking the child...
-[00001000] user panic in <unknown> at lib/fork.c:81: fork not implemented
+[00001000] new env 00001001
+I am the parent.  Running the child...
+I am the parent.  Killing the child...
+[00001000] destroying 00001001
+[00001000] free env 00001001
+[00001000] exiting gracefully
+[00001000] free env 00001000
+No runnable environments in the system!
 Welcome to the JOS kernel monitor!
 Type 'help' for a list of commands.
-TRAP frame at 0xf02b1000 from CPU 0
-  edi  0x00000000
-  esi  0x008011f6
-  ebp  0xeebfdf90
-  oesp 0xf022efdc
-  ebx  0xeebfdfa4
-  edx  0xeebfde38
-  ecx  0x00000001
-  eax  0x00000001
-  es   0x----0023
-  ds   0x----0023
-  trap 0x00000003 Breakpoint
-  err  0x00000000
-  eip  0x00800eb0
-  cs   0x----001b
-  flag 0x00000092
-  esp  0xeebfdf68
-  ss   0x----0023
-qemu: terminating on signal 15 from pid 12124
+qemu: terminating on signal 15 from pid 29815
