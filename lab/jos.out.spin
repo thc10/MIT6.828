@@ -11,15 +11,7 @@ check_page_installed_pgdir() succeeded!
 SMP: CPU 0 found 1 CPU(s)
 enabled interrupts: 1 2
 [00000000] new env 00001000
-I am the parent.  Forking the child...
-[00001000] new env 00001001
-I am the parent.  Running the child...
-I am the parent.  Killing the child...
-[00001000] destroying 00001001
-[00001000] free env 00001001
-[00001000] exiting gracefully
-[00001000] free env 00001000
-No runnable environments in the system!
+kernel panic on CPU 0 at kern/trap.c:313: assertion failed: !(read_eflags() & FL_IF)
 Welcome to the JOS kernel monitor!
 Type 'help' for a list of commands.
-qemu: terminating on signal 15 from pid 29815
+qemu: terminating on signal 15 from pid 19310
